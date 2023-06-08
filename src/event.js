@@ -11,11 +11,30 @@ import {
   getVoiceConnection,
   joinVoiceChannel,
 } from "@discordjs/voice";
+import { fork } from "child_process";
+const controller = new AbortController();
+const { signal } = controller;
 
 function events(client) {
-  let queue;
-  let current;
-  let player;
+  const ytsearch = fork("./src/workers/ytsearch.js", [], { signal });
+
+  ytsearch.on("error", (err) => {
+    console.log(err);
+  });
+
+  ytsearch.on("message", function (message) {
+    let queue = global.guildcache.getmeta("queue", message[1]);
+    queue.push(message[0]);
+    // global.guildcache.setmeta("queue", message[1], queue);
+    let playing = global.guildcache.getmeta("playing", message[1]);
+    playing ? true : helpers.playQueue(message[1]);
+    global.guildcache.setmeta("playing", message[1], true);
+    // controller.abort();
+  });
+
+  ytsearch.on("close", function (code) {
+    console.log("child process exited with code " + code);
+  });
 
   client.once(Events.ClientReady, async () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -26,6 +45,9 @@ function events(client) {
   });
 
   client.on(Events.MessageCreate, async (message) => {
+    let queue;
+    let current;
+    let player;
     let prefix = await global.guildcache.get("prefix", message.guildId);
     if (
       message.author.bot | !(message.content.slice(0, prefix.length) == prefix)
@@ -51,10 +73,7 @@ function events(client) {
         getVoiceConnection(message.guildId)
           ? false
           : helpers.connectToChannel(message);
-        await helpers.getTypeQuery(query, message);
-        let playing = global.guildcache.getmeta("playing", message.guildId);
-        playing ? true : helpers.playQueue(message.guildId);
-        global.guildcache.setmeta("playing", message.guildId, true);
+        ytsearch.send([query, message.guildId]);
         break;
       case "skip":
         global.guildcache.setmeta(
@@ -65,11 +84,11 @@ function events(client) {
         helpers.playQueue(message.guildId);
         break;
       case "pause":
-        player = global.guildcache.getmeta("player", message.guildId)
+        player = global.guildcache.getmeta("player", message.guildId);
         player.pause();
         break;
       case "resume":
-        player = global.guildcache.getmeta("player", message.guildId)
+        player = global.guildcache.getmeta("player", message.guildId);
         player.unpause();
         break;
       case "queue":
@@ -88,8 +107,11 @@ function events(client) {
         current = global.guildcache.getmeta("current", message.guildId);
         global.guildcache.setmeta("queue", message.guildId, [queue[current]]);
         global.guildcache.setmeta("current", message.guildId, 0);
-        let connection = global.guildcache.getmeta("connection", message.guildId);
-        connection.destroy()
+        let connection = global.guildcache.getmeta(
+          "connection",
+          message.guildId
+        );
+        connection.destroy();
         break;
       case "loop":
         console.log("nao feito");

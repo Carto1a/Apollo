@@ -16,9 +16,6 @@ import ytdl from "ytdl-core";
 // funcao de loop
 // funcao de force play
 
-const youtubeSongRegex =
-  /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/g;
-
 function processQuery(item) {
   let args = item.trim().split(/ +/g);
   let command = args.shift();
@@ -159,94 +156,6 @@ function connectToChannel(message) {
   } catch (error) {
     connection.destroy();
     throw error;
-  }
-}
-
-async function searchTracksByQuery(query, message) {
-  const apikey = process.env.YOUTUBE_KEY;
-  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&fields=items(id(videoId),snippet(title))&q=${encodeURIComponent(
-    query
-  )}&key=${apikey}`;
-
-  let track;
-
-  await fetch(searchUrl)
-    .then((res) => res.json())
-    .then(async (json) => {
-      const videoId = json.items[0].id.videoId;
-      const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails&key=${apikey}&fields=items(contentDetails(duration))`;
-
-      await fetch(url)
-        .then((res) => res.json())
-        .then((video) => {
-          json.items[0].duration = video.items[0].contentDetails.duration;
-          track = json.items[0];
-
-          console.log(
-            `Title: ${json.items[0].snippet.title} id: ${json.items[0].id.videoId} duracao: ${json.items[0].duration}`
-          );
-        });
-
-      console.log(`https://www.youtube.com/watch?v=${videoId}`);
-      let queue = global.guildcache.getmeta("queue", message.guildId);
-      queue.push(track);
-    })
-    .catch((err) => console.log(err));
-}
-
-async function searchTracksByURL(urlTrack, message) {
-  // const apikey    = process.env.YOUTUBE_KEY;
-  // let track;
-  // const idRegex = /([A-Za-z0-9]+(_[A-Za-z0-9]+)+)|(?:[=])([A-Za-z0-9]+\3)/g;
-
-  // // const videoId = urlTrack.match(idRegex);
-  // const videoId = urlTrack.replace(/^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)/, "");
-  // const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails&key=${apikey}&fields=items(contentDetails(duration))`;
-
-  // await fetch(url)
-  //   .then(res => res.json())
-  //   .then(video => {
-  //     json.items[0].snippet.title = video.items[0].snippet.title;
-  //     json.items[0].id.videoId = video.items[0].id;
-  //     json.items[0].duration = video.items[0].contentDetails.duration;
-  //     track = json.items[0];
-
-  //     console.log(`Title: ${json.items[0].snippet.title} id: ${json.items[0].id.videoId} duracao: ${json.items[0].duration}`);
-  //   }).catch(err => console.log(err));
-
-  //   console.log(`https://www.youtube.com/watch?v=${videoId}`);
-  //   queue.push(track);
-
-  let result = await ytdl.getBasicInfo(urlTrack);
-  let track = {
-    snippet: {
-      title: "",
-    },
-    id: {
-      videoId: "",
-    },
-    duration: "",
-  };
-
-  track.snippet.title = result.videoDetails.title;
-  track.id.videoId = result.videoDetails.videoId;
-  track.duration = result.videoDetails.lengthSeconds;
-
-  let queue = global.guildcache.getmeta("queue", message.guildId);
-  queue.push(track);
-}
-
-async function getTypeQuery(query, message) {
-  switch (true) {
-    case youtubeSongRegex.test(query):
-      console.log("youtube song");
-      await searchTracksByURL(query, message);
-      break;
-
-    default:
-      console.log("string to search");
-      await searchTracksByQuery(query, message);
-      break;
   }
 }
 
