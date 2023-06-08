@@ -49,6 +49,6 @@ let conn = await mongo.connect()
 // channelSongs
 global.guildcache = new GuildCache(conn)
 
-events.eventsClient(client)
+events.eventsClient(client, player)
 
 client.login(process.env.DISCORD_TOKEN);

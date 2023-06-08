@@ -74,19 +74,21 @@ export default class GuildCache {
     }
   }
 
-  getall(guild) {
-    return this.list[guild];
+  setmeta(item, guild, value){
+    if (this.list[guild] == undefined) {
+      this.list[guild] = {};
+    }
+    this.list[guild][item] = value;
   }
 
-  delitem(item, guild) {
-    delete this.list[guild][item];
-  }
-
-  delguild(guild) {
-    delete this.list[guild];
-  }
-
-  clear() {
-    this.list = {};
+  getmeta(item, guild){
+    if (this.list[guild]["queue"] == undefined) {
+      this.list[guild]["queue"] = []
+      this.list[guild]["current"] = 0
+      this.list[guild]['resource'] = ""
+      this.list[guild]['playing'] = false
+      this.list[guild]['subscribe'] = ""
+    }
+    return this.list[guild][item];
   }
 }
