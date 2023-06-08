@@ -1,18 +1,8 @@
-import { Events } from "discord.js";
-import helpers from "./helpers/helpers.js";
-import {
-  AudioPlayerStatus,
-  NoSubscriberBehavior,
-  StreamType,
-  VoiceConnectionStatus,
-  createAudioPlayer,
-  createAudioResource,
-  entersState,
-  getVoiceConnection,
-  joinVoiceChannel,
-} from "@discordjs/voice";
-import messageCommand from './commands/commands.js'
 import { fork } from "child_process";
+import { Events } from "discord.js";
+import messageCommand from './commands/commands.js';
+import helpers from "./helpers/helpers.js";
+
 const controller = new AbortController();
 const { signal } = controller;
 
