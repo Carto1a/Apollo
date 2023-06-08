@@ -35,11 +35,11 @@ const client = new Client({
   ]
 });
 
-const player = createAudioPlayer({
-	behaviors: {
-		noSubscriber: NoSubscriberBehavior.Pause,
-	},
-});
+// const player = createAudioPlayer({
+// 	behaviors: {
+// 		noSubscriber: NoSubscriberBehavior.Pause,
+// 	},
+// });
 
 let conn = await mongo.connect()
 
@@ -49,6 +49,6 @@ let conn = await mongo.connect()
 // channelSongs
 global.guildcache = new GuildCache(conn)
 
-events.eventsClient(client, player)
+events.events(client)
 
 client.login(process.env.DISCORD_TOKEN);

@@ -85,9 +85,7 @@ export default class GuildCache {
     if (this.list[guild]["queue"] == undefined) {
       this.list[guild]["queue"] = []
       this.list[guild]["current"] = 0
-      this.list[guild]['resource'] = ""
       this.list[guild]['playing'] = false
-      this.list[guild]['subscribe'] = ""
     }
     return this.list[guild][item];
   }
