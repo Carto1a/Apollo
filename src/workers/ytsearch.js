@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Gratidão eterna para santo gtp por esses regexs
+
 const youtubeSongRegex =
   /^(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|ytscreeningroom\?.+\bvi?=|embed\/|v\/|e\/|.+\?vi?=)([\w-]{11}))(?:[^\s]*)$/;
 const youtubeMobileRegex =
@@ -40,28 +42,6 @@ async function searchTracksByQuery(query, guildId) {
 }
 
 async function searchTracksByURL(urlTrack, guildId) {
-  // const apikey    = process.env.YOUTUBE_KEY;
-  // let track;
-  // const idRegex = /([A-Za-z0-9]+(_[A-Za-z0-9]+)+)|(?:[=])([A-Za-z0-9]+\3)/g;
-
-  // // const videoId = urlTrack.match(idRegex);
-  // const videoId = urlTrack.replace(/^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)/, "");
-  // const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails&key=${apikey}&fields=items(contentDetails(duration))`;
-
-  // await fetch(url)
-  //   .then(res => res.json())
-  //   .then(video => {
-  //     json.items[0].snippet.title = video.items[0].snippet.title;
-  //     json.items[0].id.videoId = video.items[0].id;
-  //     json.items[0].duration = video.items[0].contentDetails.duration;
-  //     track = json.items[0];
-
-  //     console.log(`Title: ${json.items[0].snippet.title} id: ${json.items[0].id.videoId} duracao: ${json.items[0].duration}`);
-  //   }).catch(err => console.log(err));
-
-  //   console.log(`https://www.youtube.com/watch?v=${videoId}`);
-  //   queue.push(track);
-
   let result = await ytdl.getBasicInfo(urlTrack);
   let track = {
     id: {

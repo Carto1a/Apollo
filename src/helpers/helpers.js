@@ -16,37 +16,11 @@ import ytdl from "ytdl-core";
 // funcao de loop
 // funcao de force play
 
-function processQuery(item) {
-  let args = item.trim().split(/ +/g);
+function processQuery(item, slice) {
+  let args = item.slice(slice.length).trim().split(/ +/g);
   let command = args.shift();
   let query = args.join(" ");
-  return [command, query];
-}
-
-function configSwith(query, message) {
-  let x = processQuery(query);
-  switch (x[0]) {
-    case "prefix":
-      if (x[1].length < 12) {
-        global.guildcache.set("prefix", message.guildId, x[1]);
-        message.reply(`new prefix - |${x[1]}|`);
-        return;
-      }
-      message.reply("prefix too big, try again");
-      break;
-    case "channelSongs":
-      let channel = message.guild.channels.resolveId(x[1]);
-      if (channel) {
-        global.guildcache.set("channelSongs", message.guildId, channel);
-        message.channel.send(`Song out Channel set: ${channel}`);
-      } else {
-        message.channel.send("Invalid Channel!");
-      }
-      break;
-    default:
-      message.reply(`Not a valid command ${command}`);
-      break;
-  }
+  return {command, query, args};
 }
 
 function connectToChannel(message) {
@@ -184,7 +158,6 @@ async function playQueue(guildId) {
 }
 
 export default {
-  configSwith,
   connectToChannel,
   processQuery,
   playQueue,
