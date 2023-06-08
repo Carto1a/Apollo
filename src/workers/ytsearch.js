@@ -8,7 +8,7 @@ const youtubeSongRegex =
 const youtubeMobileRegex =
   /^((?:https?:)?\/\/)?((?:www|m)\.)?youtu\.be\/([^"&?/ ]{11})/gi;
 
-async function searchTracksByQuery(query) {
+async function searchTracksByQuery(query, guildId) {
   const apikey = process.env.YOUTUBE_KEY;
   const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&fields=items(id(videoId),snippet(title))&q=${encodeURIComponent(
     query
@@ -16,7 +16,7 @@ async function searchTracksByQuery(query) {
 
   let track;
 
-  await fetch(searchUrl, guildId)
+  await fetch(searchUrl)
     .then((res) => res.json())
     .then(async (json) => {
       const videoId = json.items[0].id.videoId;

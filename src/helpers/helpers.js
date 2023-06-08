@@ -187,6 +187,5 @@ export default {
   configSwith,
   connectToChannel,
   processQuery,
-  getTypeQuery,
   playQueue,
 };
