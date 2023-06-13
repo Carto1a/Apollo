@@ -1,5 +1,6 @@
 import helpers from "../helpers/helpers.js";
 import config from "./config.js"
+import embed from "./embed.js";
 import {
   getVoiceConnection
 } from "@discordjs/voice";
@@ -11,12 +12,15 @@ async function messageEvent(message, command, query, args, ytsearch){
   let player;
 
   switch (command) {
+    case 'embed':
+      embed.commandSwith(query, message);
+      break;
     case "config":
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
         message.reply("need Administrator permissions")
         return
       }
-      config.configSwith(query, message);
+      config.commandSwith(query, message);
       break;
     case "join":
       helpers.connectToChannel(message);
@@ -25,7 +29,7 @@ async function messageEvent(message, command, query, args, ytsearch){
       getVoiceConnection(message.guildId)
         ? false
         : helpers.connectToChannel(message);
-      ytsearch.send([query, message.guildId]);
+      ytsearch.send([query, message]);
       break;
     case "skip":
       global.guildcache.setmeta(

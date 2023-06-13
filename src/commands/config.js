@@ -1,6 +1,6 @@
 import helpers from "../helpers/helpers.js";
 
-function configSwith(query0, message) {
+function commandSwith(query0, message) {
   const {command, query, args} = helpers.processQuery(query0, "");
   switch (command) {
     case "prefix":
@@ -26,4 +26,4 @@ function configSwith(query0, message) {
   }
 }
 
-export default { configSwith }
+export default { commandSwith }

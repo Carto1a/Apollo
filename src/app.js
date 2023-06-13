@@ -27,6 +27,8 @@ let conn = await mongo.connect()
 // channelSongs
 global.guildcache = new GuildCache(conn)
 
+global.guildcache.setmeta('bot', 0, client)
+
 events.events(client)
 
 client.login(process.env.DISCORD_TOKEN);

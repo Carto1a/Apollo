@@ -13,7 +13,7 @@ const youtubeMobileRegex =
 const youtubePlaylistRegex =
   /^(?:https?:\/\/)?(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:playlist\?|embed\/|v\/|watch\?v=|watch\?.+&v=|ytscreeningroom\?.+\bvi?=|embed\/|v\/|e\/|.+\?vi?=)([\w-]+))(?:[^\s]*)$/;
 
-async function searchTracksByQuery(query, guildId) {
+async function searchTracksByQuery(query, message) {
   const apikey = process.env.YOUTUBE_KEY;
   const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&fields=items(id(videoId),snippet(title))&q=${encodeURIComponent(
     query
@@ -30,6 +30,7 @@ async function searchTracksByQuery(query, guildId) {
       await fetch(url)
         .then((res) => res.json())
         .then((video) => {
+          json.items[0].requestedBy = message.authorId
           json.items[0].duration = video.items[0].contentDetails.duration;
           track = json.items[0];
 
@@ -39,12 +40,12 @@ async function searchTracksByQuery(query, guildId) {
         });
 
       console.log(`https://www.youtube.com/watch?v=${videoId}`);
-      process.send([track, guildId]);
+      process.send({track, message, typeResquest: "track"});
     })
     .catch((err) => console.log(err));
 }
 
-async function searchTracksByURL(urlTrack, guildId) {
+async function searchTracksByURL(urlTrack, message, typeResquest) {
   let err = false
   let result = await ytdl.getBasicInfo(urlTrack).catch((error) => {
     console.log(error);
@@ -60,18 +61,19 @@ async function searchTracksByURL(urlTrack, guildId) {
     },
     snippet: {
       title: "",
+      author: ""
     },
     duration: "",
+    requestedBy: message.authorId
   };
 
   track.snippet.title = result.videoDetails.title;
   track.id.videoId = result.videoDetails.videoId;
   track.duration = result.videoDetails.lengthSeconds;
-
-  process.send([track, guildId]);
+  process.send({track, message, typeResquest});
 }
 
-async function fetchPlaylist(urlPlaylist, next = null, guildId) {
+async function fetchPlaylist(urlPlaylist, next = null, message) {
   const apikey = "AIzaSyCE7GMkU5DQWgNjx3YPw2bE_CjSJ-VjPDw";
   const regex = /list=([^&]+)/;
   const match = urlPlaylist.match(regex);
@@ -94,7 +96,7 @@ async function fetchPlaylist(urlPlaylist, next = null, guildId) {
       json.items.forEach((element) => {
         searchTracksByURL(
           `https://www.youtube.com/watch?v=${element.contentDetails.videoId}`,
-          guildId
+          message, "playlist"
         );
       });
       if (json.nextPageToken != undefined) {
@@ -107,10 +109,10 @@ async function fetchPlaylist(urlPlaylist, next = null, guildId) {
     });
 }
 
-async function getPlaylist(urlPlaylist, guildId) {
+async function getPlaylist(urlPlaylist, message) {
   let next = "";
   while (next != null) {
-    next = await fetchPlaylist(urlPlaylist, next, guildId);
+    next = await fetchPlaylist(urlPlaylist, next, message);
     if (next == 0) {
       return true;
     }
@@ -120,10 +122,10 @@ async function getPlaylist(urlPlaylist, guildId) {
 process.on("message", async (query) => {
   if (youtubeSongRegex.test(query[0])) {
     console.log("url search");
-    await searchTracksByURL(query[0], query[1]);
+    await searchTracksByURL(query[0], query[1], "track");
   } else if (youtubeMobileRegex.test(query[0])) {
     console.log("url search mobile");
-    await searchTracksByURL(query[0], query[1]);
+    await searchTracksByURL(query[0], query[1], "track");
   } else if (youtubePlaylistRegex.test(query[0])) {
     await getPlaylist(query[0], query[1]);
   } else {

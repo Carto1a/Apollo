@@ -2,6 +2,7 @@ import { fork } from "child_process";
 import { Events } from "discord.js";
 import messageCommand from './commands/commands.js';
 import helpers from "./helpers/helpers.js";
+import embeds from "./embeds/embeds.js";
 
 const controller = new AbortController();
 const { signal } = controller;
@@ -13,12 +14,19 @@ function events(client) {
     console.log(err);
   });
 
-  ytsearch.on("message", function (message) {
-    let queue = global.guildcache.getmeta("queue", message[1]);
-    queue.push(message[0]);
-    let playing = global.guildcache.getmeta("playing", message[1]);
-    playing ? true : helpers.playQueue(message[1]);
-    global.guildcache.setmeta("playing", message[1], true);
+  ytsearch.on("message", async (data) => {
+    let { message, track, typeResquest} = data;
+    if(typeResquest == "track"){
+      let client = global.guildcache.getmeta('bot', 0)
+      let channel = await client.channels.fetch(message.channelId)
+      // channel.send({embeds: [embeds.added(track, message)]})
+      channel.send({embeds: [await embeds.added(track, message)]})
+    }
+    let queue = global.guildcache.getmeta("queue", message.guildId);
+    queue.push(track);
+    let playing = global.guildcache.getmeta("playing", message.guildId);
+    playing ? true : helpers.playQueue(message.guildId);
+    global.guildcache.setmeta("playing", message.guildId, true);
     // controller.abort();
   });
 
