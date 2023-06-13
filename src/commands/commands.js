@@ -3,6 +3,7 @@ import config from "./config.js"
 import {
   getVoiceConnection
 } from "@discordjs/voice";
+import { PermissionsBitField } from "discord.js";
 
 async function messageEvent(message, command, query, args, ytsearch){
   let queue;
@@ -11,6 +12,10 @@ async function messageEvent(message, command, query, args, ytsearch){
 
   switch (command) {
     case "config":
+      if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+        message.reply("need Administrator permissions")
+        return
+      }
       config.configSwith(query, message);
       break;
     case "join":
@@ -80,9 +85,13 @@ async function messageEvent(message, command, query, args, ytsearch){
       console.log("nao feito");
       break;
     case "kill":
-      console.log("nao feito");
+      message.reply("tchau")
+      process.exit()
       break;
     case "ping":
+      console.log("nao feito");
+      break;
+    case "emoji":
       console.log("nao feito");
       break;
     default:
