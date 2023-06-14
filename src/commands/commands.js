@@ -1,6 +1,6 @@
 import helpers from "../helpers/helpers.js";
 import config from "./config.js"
-import embed from "./embed.js";
+import embed from "../embeds/embeds.js";
 import {
   getVoiceConnection
 } from "@discordjs/voice";
@@ -12,9 +12,6 @@ async function messageEvent(message, command, query, args, ytsearch){
   let player;
 
   switch (command) {
-    case 'embed':
-      embed.commandSwith(query, message);
-      break;
     case "config":
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
         message.reply("need Administrator permissions")
@@ -47,10 +44,13 @@ async function messageEvent(message, command, query, args, ytsearch){
       player = global.guildcache.getmeta("player", message.guildId);
       player.unpause();
       break;
+    case "stop":
+      console.log('stop');
+      break;
     case "queue":
-      queue = global.guildcache.getmeta("queue", message.guildId);
-      message.reply("dsad" + queue);
-      console.log(queue);
+      message.guildName = message.guild.name
+      message.guildImgURL = message.guild.iconURL()
+      message.reply({embeds: [await embed.queue(message)]})
       break;
     case "clearqueue":
       queue = global.guildcache.getmeta("queue", message.guildId);

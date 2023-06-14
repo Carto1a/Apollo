@@ -16,13 +16,12 @@ function events(client) {
 
   ytsearch.on("message", async (data) => {
     let { message, track, typeResquest} = data;
+    let queue = global.guildcache.getmeta("queue", message.guildId);
     if(typeResquest == "track"){
       let client = global.guildcache.getmeta('bot', 0)
       let channel = await client.channels.fetch(message.channelId)
-      // channel.send({embeds: [embeds.added(track, message)]})
-      channel.send({embeds: [await embeds.added(track, message)]})
+      channel.send({embeds: [await embeds.added(track, message, queue.length)]})
     }
-    let queue = global.guildcache.getmeta("queue", message.guildId);
     queue.push(track);
     let playing = global.guildcache.getmeta("playing", message.guildId);
     playing ? true : helpers.playQueue(message.guildId);
