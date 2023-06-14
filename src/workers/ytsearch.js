@@ -119,17 +119,18 @@ async function getPlaylist(urlPlaylist, message) {
   }
 }
 
-process.on("message", async (query) => {
-  if (youtubeSongRegex.test(query[0])) {
+process.on("message", async (data) => {
+  const {query, message, args} = data
+  if (youtubeSongRegex.test(args[0])) {
     console.log("url search");
-    await searchTracksByURL(query[0], query[1], "track");
-  } else if (youtubeMobileRegex.test(query[0])) {
+    await searchTracksByURL(args[0], message, "track");
+  } else if (youtubeMobileRegex.test(args[0])) {
     console.log("url search mobile");
-    await searchTracksByURL(query[0], query[1], "track");
-  } else if (youtubePlaylistRegex.test(query[0])) {
-    await getPlaylist(query[0], query[1]);
+    await searchTracksByURL(args[0], message, "track");
+  } else if (youtubePlaylistRegex.test(args[0])) {
+    await getPlaylist(args[0], message);
   } else {
     console.log("string search");
-    await searchTracksByQuery(query[0], query[1]);
+    await searchTracksByQuery(query, message);
   }
 });

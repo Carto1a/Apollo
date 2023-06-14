@@ -21,32 +21,43 @@ async function queue(message){
   let current = global.guildcache.getmeta('current', message.guildId)
 
   let fields = []
-
-  if(queue.length == 1){
+  if(queue.length == 0){
     const element = queue[current];
     let field = {
       name: "",
       value: `Não há faixas na fila.`,
     }
     fields.push(field)
-    fields.push(setupField(element, 0))
   } else {
-    let x = (queue.length-current)-1
-    let max = x < 10? x : current+10;
-    for (let i = current+1; i < max+1; i++) {
-      const element = queue[i];
-      fields.push(setupField(element, i))
-    }
-    if(x > 10){
-      let pos = inlineCode('N.')
+    if(queue.length == current+1){
+      const element = queue[current];
       let field = {
         name: "",
-        value: `${pos} ${x} outras faixas...`,
+        value: `Não há faixas na fila.`,
       }
       fields.push(field)
+      fields.push(setupField(element, 0))
+    } else {
+      let x = (queue.length-current)-1
+      let max = x < 10? x : current+10;
+      let count = 1
+      for (let i = current+1; i < max+1; i++) {
+        const element = queue[i];
+        fields.push(setupField(element, count))
+        count += 1
+      }
+  
+      if(x > 10){
+        let pos = inlineCode('N.')
+        let field = {
+          name: "",
+          value: `${pos} ${x} outras faixas...`,
+        }
+        fields.push(field)
+      }
+      const element = queue[current];
+      fields.push(setupField(element, 0))
     }
-    const element = queue[current];
-    fields.push(setupField(element, 0))
   }
 
   const embed = {
@@ -60,12 +71,11 @@ async function queue(message){
   return embed
 }
 
-function skip(){
+function skip(skips){
+  let description = skips == 1? 'Skip the current track': `Skip ${skips} Tracks`
   const embed = {
     color: 0x0099ff,
-    author: {
-      name: 'Stopped playing',
-    },
+    description: description,
   }
   return embed
 }

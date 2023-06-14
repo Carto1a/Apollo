@@ -7,8 +7,6 @@ import {
 import { PermissionsBitField } from "discord.js";
 
 async function messageEvent(message, command, query, args, ytsearch){
-  let queue;
-  let current;
   let player;
 
   switch (command) {
@@ -26,14 +24,24 @@ async function messageEvent(message, command, query, args, ytsearch){
       getVoiceConnection(message.guildId)
         ? false
         : helpers.connectToChannel(message);
-      ytsearch.send([query, message]);
+      ytsearch.send({query, message, args});
       break;
     case "skip":
+      let skip;
+      skip = args[0] == undefined? 1 : parseInt(args[0]);
+      if(skip == NaN){
+        message.reply(`Argumento Invalito ${args[0]}`)
+        return
+      }
+      let current = global.guildcache.getmeta("current", message.guildId)
+      let queue = global.guildcache.getmeta("queue", message.guildId)
+      skip = skip >= queue.length? queue.length-(current-1)-2: skip;
       global.guildcache.setmeta(
         "current",
         message.guildId,
-        global.guildcache.getmeta("current", message.guildId) + 1
+        current + skip
       );
+      message.reply({embeds:[embed.skip(skip)]})
       helpers.playQueue(message.guildId);
       break;
     case "pause":
