@@ -12,7 +12,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/src/app.js"
-            // "program": "${workspaceFolder}/lixo/main.js"
+            // "program": "${workspaceFolder}/teste/teste.js"
 
         }
     ]

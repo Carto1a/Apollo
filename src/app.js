@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import dotenv from 'dotenv';
 import events from '../src/event.js';
-import GuildCache from '../src/guildcache.js';
+import GuildCache from './mongoCache.js';
 import mongo from '../src/repository/connection.js';
 
 dotenv.config()
@@ -21,11 +21,18 @@ const client = new Client({
 
 let conn = await mongo.connect()
 
-// guildID
-// prefix
-// playlists
-// channelSongs
-global.guildcache = new GuildCache(conn)
+global.guildcache = new GuildCache(conn, "orpheus-discord", "guild", 
+{
+	guildID: id,
+	prefix: "!",
+	playlists: undefined,
+	channelSongs: undefined,
+},
+{
+	queue: [],
+	current: 0,
+	playing: false,
+})
 
 global.guildcache.setmeta('bot', 0, client)
 
