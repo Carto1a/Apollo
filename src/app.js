@@ -21,9 +21,14 @@ const client = new Client({
 
 let conn = await mongo.connect()
 
+
+let teste = { key: 23 }
+
+
+
 global.guildcache = new GuildCache(conn, "orpheus-discord", "guild", 
 {
-	guildID: id,
+	guildID: undefined,
 	prefix: "!",
 	playlists: undefined,
 	channelSongs: undefined,

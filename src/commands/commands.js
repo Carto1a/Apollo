@@ -8,6 +8,8 @@ import { PermissionsBitField } from "discord.js";
 
 async function messageEvent(message, command, query, args, ytsearch){
   let player;
+  let queue;
+  let current
 
   switch (command) {
     case "config":
@@ -33,8 +35,8 @@ async function messageEvent(message, command, query, args, ytsearch){
         message.reply(`Argumento Invalito ${args[0]}`)
         return
       }
-      let current = global.guildcache.getmeta("current", message.guildId)
-      let queue = global.guildcache.getmeta("queue", message.guildId)
+      current = global.guildcache.getmeta("current", message.guildId)
+      queue = global.guildcache.getmeta("queue", message.guildId)
       skip = skip >= queue.length? queue.length-(current-1)-2: skip;
       global.guildcache.setmeta(
         "current",
@@ -105,6 +107,9 @@ async function messageEvent(message, command, query, args, ytsearch){
       break;
     case "emoji":
       console.log("nao feito");
+      break;
+    case "dump":
+      global.guildcache.dump();
       break;
     default:
       message.reply(`Not a valid command ${command}`);

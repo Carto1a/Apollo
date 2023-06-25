@@ -1,4 +1,5 @@
 import helpers from "../helpers/helpers.js";
+import { inlineCode } from 'discord.js';
 
 function commandSwith(query0, message) {
   const {command, query, args} = helpers.processQuery(query0, "");
@@ -6,7 +7,7 @@ function commandSwith(query0, message) {
     case "prefix":
       if (query.length < 12) {
         global.guildcache.set("prefix", message.guildId, query);
-        message.reply(`new prefix - |${query}|`);
+        message.reply(`new prefix - ${inlineCode(query)}`);
         return;
       }
       message.reply("prefix too big, try again");

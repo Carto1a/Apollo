@@ -1,3 +1,4 @@
+import { json } from "express";
 import { MongoClient } from "mongodb";
 
 export default class GuildCache {
@@ -19,17 +20,22 @@ export default class GuildCache {
   }
 
   async set(item, id, value) {
-    let result = await this.collection.findOne({ guildID: id })
+    let fistKey = {}
+    let fistKeyName = Object.keys(this.template)[0];
+    fistKey[Object.keys(this.template)[0]] = id
+    let result = await this.collection.findOne(fistKey)
     if(!result){
-      this.collection.insertOne(this.template);
-      this.cache[id] = this.template;
+      let temp = Object.assign({}, this.template);
+      temp[fistKeyName] = id; 
+      this.collection.insertOne(temp);
+      this.cache[id] = temp;
     } else {
       const update = {
         $set: { }
       };
       update.$set[item] = value;
 
-      this.collection.updateOne({guildID: id}, update)
+      this.collection.updateOne(fistKey, update)
       if (this.cache[id] == undefined) {
         this.cache[id] = {};
       }
@@ -41,18 +47,25 @@ export default class GuildCache {
     if (this.cache[id] != undefined){
       return this.cache[id][item];
     }
-    let result = await this.collection.findOne({ guildID: id })
+    let fistKey = {}
+    let fistKeyName = Object.keys(this.template)[0];
+    fistKey[Object.keys(this.template)[0]] = id
+    let result = await this.collection.findOne(fistKey)
     if (!result) {
-      this.collection.insertOne(this.template);
+      let temp = Object.assign({}, this.template);
+      temp[fistKeyName] = id; 
+      this.collection.insertOne(temp);
 
       if (this.cache[id] == undefined) {
-        this.cache[id] = this.template;
+        this.cache[id] = temp;
       }
       return this.cache[id][item];
 
     } else {
+      let temp = Object.assign({}, this.template);
+      temp[fistKeyName] = id; 
       if (this.cache[id] == undefined) {
-        this.cache[id] = this.template;
+        this.cache[id] = temp;
       }
       if (this.cache[id][item] == undefined) {
         this.cache[id][item] = await result[item];
@@ -62,6 +75,9 @@ export default class GuildCache {
   }
 
   setmeta(item, id, value){
+    if(this.cache[id] == undefined){
+      this.cache[id] = {}
+    }
     if (this.cache[id]['meta'] == undefined) {
       this.cache[id]['meta'] = this.meta;
     }
@@ -74,4 +90,9 @@ export default class GuildCache {
 		}
     return this.cache[id]['meta'][item];
   }
+
+  dump(){
+    console.log(this.cache)
+  }
+
 }
