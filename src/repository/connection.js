@@ -1,10 +1,10 @@
+import dotenv from 'dotenv';
 import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv'
 dotenv.config('../')
 
 const username = encodeURIComponent(process.env.MONGO_USER);
 const password = encodeURIComponent(process.env.MONGO_PASSWORD);
-const clusterUrl = "orpheus.mksifda.mongodb.net";
+const clusterUrl = process.env.MONGO_URL;
 const authMechanism = "DEFAULT";
 
 const uri =

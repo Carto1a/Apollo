@@ -1,21 +1,20 @@
 import helpers from "../helpers/helpers.js";
-import config from "./config.js"
+import config from "./config.js";
 import embed from "../embeds/embeds.js";
-import {
-  getVoiceConnection
-} from "@discordjs/voice";
+import { getVoiceConnection } from "@discordjs/voice";
 import { PermissionsBitField } from "discord.js";
+import trackSearch from "../searchSongs/index.js";
 
-async function messageEvent(message, command, query, args, ytsearch){
+async function messageEvent(message, command, query, args) {
   let player;
   let queue;
-  let current
+  let current;
 
   switch (command) {
     case "config":
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-        message.reply("need Administrator permissions")
-        return
+        message.reply("need Administrator permissions");
+        return;
       }
       config.commandSwith(query, message);
       break;
@@ -23,27 +22,21 @@ async function messageEvent(message, command, query, args, ytsearch){
       helpers.connectToChannel(message);
       break;
     case "play":
-      getVoiceConnection(message.guildId)
-        ? false
-        : helpers.connectToChannel(message);
-      ytsearch.send({query, message, args});
+      getVoiceConnection(message.guildId) ? false : helpers.connectToChannel(message);
+      trackSearch.search({ query, message, args });
       break;
     case "skip":
       let skip;
-      skip = args[0] == undefined? 1 : parseInt(args[0]);
-      if(skip == NaN){
-        message.reply(`Argumento Invalito ${args[0]}`)
-        return
+      skip = args[0] == undefined ? 1 : parseInt(args[0]);
+      if (skip == NaN) {
+        message.reply(`Argumento Invalito ${args[0]}`);
+        return;
       }
-      current = global.guildcache.getmeta("current", message.guildId)
-      queue = global.guildcache.getmeta("queue", message.guildId)
-      skip = skip >= queue.length? queue.length-(current-1)-2: skip;
-      global.guildcache.setmeta(
-        "current",
-        message.guildId,
-        current + skip
-      );
-      message.reply({embeds:[embed.skip(skip)]})
+      current = global.guildcache.getmeta("current", message.guildId);
+      queue = global.guildcache.getmeta("queue", message.guildId);
+      skip = skip >= queue.length ? queue.length - (current - 1) - 2 : skip;
+      global.guildcache.setmeta("current", message.guildId, current + skip);
+      message.reply({ embeds: [embed.skip(skip)] });
       helpers.playQueue(message.guildId);
       break;
     case "pause":
@@ -55,12 +48,12 @@ async function messageEvent(message, command, query, args, ytsearch){
       player.unpause();
       break;
     case "stop":
-      console.log('stop');
+      console.log("stop");
       break;
     case "queue":
-      message.guildName = message.guild.name
-      message.guildImgURL = message.guild.iconURL()
-      message.reply({embeds: [await embed.queue(message)]})
+      message.guildName = message.guild.name;
+      message.guildImgURL = message.guild.iconURL();
+      message.reply({ embeds: [await embed.queue(message)] });
       break;
     case "clearqueue":
       queue = global.guildcache.getmeta("queue", message.guildId);
@@ -73,10 +66,7 @@ async function messageEvent(message, command, query, args, ytsearch){
       current = global.guildcache.getmeta("current", message.guildId);
       global.guildcache.setmeta("queue", message.guildId, [queue[current]]);
       global.guildcache.setmeta("current", message.guildId, 0);
-      let connection = global.guildcache.getmeta(
-        "connection",
-        message.guildId
-      );
+      let connection = global.guildcache.getmeta("connection", message.guildId);
       connection.destroy();
       break;
     case "loop":
@@ -91,7 +81,7 @@ async function messageEvent(message, command, query, args, ytsearch){
       global.guildcache.setmeta(
         "current",
         message.guildId,
-        global.guildcache.getmeta("current", message.guildId) - 1
+        global.guildcache.getmeta("current", message.guildId) - 1,
       );
       helpers.playQueue(message);
       break;
@@ -99,8 +89,8 @@ async function messageEvent(message, command, query, args, ytsearch){
       console.log("nao feito");
       break;
     case "kill":
-      message.reply("tchau")
-      process.exit()
+      message.reply("tchau");
+      process.exit();
       break;
     case "ping":
       console.log("nao feito");
@@ -116,4 +106,4 @@ async function messageEvent(message, command, query, args, ytsearch){
   }
 }
 
-export default { messageEvent }
+export default { messageEvent };

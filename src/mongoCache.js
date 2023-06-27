@@ -1,4 +1,3 @@
-import { json } from "express";
 import { MongoClient } from "mongodb";
 
 export default class GuildCache {
@@ -7,35 +6,35 @@ export default class GuildCache {
    * @param {MongoClient} connection
    */
 
-	cache = {};
-	template = {};
-	meta = {}
+  cache = {};
+  template = {};
+  meta = {};
 
   constructor(connection, db, collectionName, template, meta) {
     let database = connection.db(db);
     let collection = database.collection(collectionName);
     this.collection = collection;
-		this.template = template;
-		this.meta = meta
+    this.template = template;
+    this.meta = meta;
   }
 
   async set(item, id, value) {
-    let fistKey = {}
+    let fistKey = {};
     let fistKeyName = Object.keys(this.template)[0];
-    fistKey[Object.keys(this.template)[0]] = id
-    let result = await this.collection.findOne(fistKey)
-    if(!result){
-      let temp = Object.assign({}, this.template);
-      temp[fistKeyName] = id; 
+    fistKey[Object.keys(this.template)[0]] = id;
+    let result = await this.collection.findOne(fistKey);
+    if (!result) {
+      let temp = JSON.parse(JSON.stringify(this.template));
+      temp[fistKeyName] = id;
       this.collection.insertOne(temp);
       this.cache[id] = temp;
     } else {
       const update = {
-        $set: { }
+        $set: {},
       };
       update.$set[item] = value;
 
-      this.collection.updateOne(fistKey, update)
+      this.collection.updateOne(fistKey, update);
       if (this.cache[id] == undefined) {
         this.cache[id] = {};
       }
@@ -44,23 +43,22 @@ export default class GuildCache {
   }
 
   async get(item, id) {
-    if (this.cache[id] != undefined){
+    if (this.cache[id] != undefined) {
       return this.cache[id][item];
     }
-    let fistKey = {}
+    let fistKey = {};
     let fistKeyName = Object.keys(this.template)[0];
-    fistKey[Object.keys(this.template)[0]] = id
-    let result = await this.collection.findOne(fistKey)
+    fistKey[Object.keys(this.template)[0]] = id;
+    let result = await this.collection.findOne(fistKey);
     if (!result) {
-      let temp = Object.assign({}, this.template);
-      temp[fistKeyName] = id; 
+      let temp = JSON.parse(JSON.stringify(this.template));
+      temp[fistKeyName] = id;
       this.collection.insertOne(temp);
 
       if (this.cache[id] == undefined) {
         this.cache[id] = temp;
       }
       return this.cache[id][item];
-
     } else {
       if (this.cache[id] == undefined) {
         this.cache[id] = {};
@@ -72,25 +70,24 @@ export default class GuildCache {
     }
   }
 
-  setmeta(item, id, value){
-    if(this.cache[id] == undefined){
-      this.cache[id] = {}
+  setmeta(item, id, value) {
+    if (this.cache[id] == undefined) {
+      this.cache[id] = {};
     }
-    if (this.cache[id]['meta'] == undefined) {
-      this.cache[id]['meta'] = this.meta;
+    if (this.cache[id]["meta"] == undefined) {
+      this.cache[id]["meta"] = JSON.parse(JSON.stringify(this.meta));
     }
-    this.cache[id]['meta'][item] = value;
+    this.cache[id]["meta"][item] = value;
   }
 
-  getmeta(item, id){
-		if(this.cache[id]['meta'] == undefined){
-			this.cache[id]['meta'] = this.meta
-		}
-    return this.cache[id]['meta'][item];
+  getmeta(item, id) {
+    if (this.cache[id]["meta"] == undefined) {
+      this.cache[id]["meta"] = JSON.parse(JSON.stringify(this.meta));
+    }
+    return this.cache[id]["meta"][item];
   }
 
-  dump(){
-    console.log(this.cache)
+  dump() {
+    console.log(this.cache);
   }
-
 }

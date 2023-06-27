@@ -4,8 +4,8 @@ import {
 } from 'discord.js';
 import dotenv from 'dotenv';
 import events from '../src/event.js';
-import GuildCache from './mongoCache.js';
 import mongo from '../src/repository/connection.js';
+import GuildCache from './mongoCache.js';
 
 dotenv.config()
 
@@ -20,11 +20,6 @@ const client = new Client({
 });
 
 let conn = await mongo.connect()
-
-
-let teste = { key: 23 }
-
-
 
 global.guildcache = new GuildCache(conn, "orpheus-discord", "guild", 
 {

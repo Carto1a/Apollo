@@ -118,8 +118,10 @@ async function getPlaylist(urlPlaylist, message) {
     }
   }
 }
-
+let i =0
 process.on("message", async (data) => {
+  console.log(`teste ${i}`)
+  i += 1
   const {query, message, args} = data
   if (youtubeSongRegex.test(args[0])) {
     console.log("url search");
@@ -133,4 +135,5 @@ process.on("message", async (data) => {
     console.log("string search");
     await searchTracksByQuery(query, message);
   }
+  console.log(`teste ${i}`)
 });

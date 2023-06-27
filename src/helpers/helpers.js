@@ -11,11 +11,6 @@ import {
 } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 
-// funcao de matar
-// funcao de playlist
-// funcao de loop
-// funcao de force play
-
 function processQuery(item, slice) {
   let args = item.slice(slice.length).trim().split(/ +/g);
   let command = args.shift();
@@ -33,7 +28,7 @@ function connectToChannel(message) {
     );
 
   if (voiceConnection) {
-    message.reply("O bot ja esta conectado em um canal e voz");
+    message.reply("O bot ja esta conectado em um canal de voz");
     return voiceConnection;
   }
 
@@ -68,6 +63,7 @@ function connectToChannel(message) {
     global.guildcache.setmeta("playing", message.guildId, false);
     console.log("Esperando.");
     queue = global.guildcache.getmeta("queue", guildId);
+    // rescrever
     current = global.guildcache.getmeta("current", guildId);
     global.guildcache.setmeta(
       "current",
@@ -133,7 +129,7 @@ function connectToChannel(message) {
   }
 }
 
-async function play(track, player, guild) {
+async function play(track, player) {
   if (!track) track = "./song0.m4a";
   const stream = ytdl(track, {
     filter: "audioonly",
