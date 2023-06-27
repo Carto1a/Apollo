@@ -62,10 +62,8 @@ export default class GuildCache {
       return this.cache[id][item];
 
     } else {
-      let temp = Object.assign({}, this.template);
-      temp[fistKeyName] = id; 
       if (this.cache[id] == undefined) {
-        this.cache[id] = temp;
+        this.cache[id] = {};
       }
       if (this.cache[id][item] == undefined) {
         this.cache[id][item] = await result[item];
