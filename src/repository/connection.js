@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { MongoClient } from 'mongodb';
-dotenv.config('../')
+dotenv.config()
 
 const username = encodeURIComponent(process.env.MONGO_USER);
 const password = encodeURIComponent(process.env.MONGO_PASSWORD);

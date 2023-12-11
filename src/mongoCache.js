@@ -24,7 +24,7 @@ export default class GuildCache {
     fistKey[Object.keys(this.template)[0]] = id;
     let result = await this.collection.findOne(fistKey);
     if (!result) {
-      let temp = JSON.parse(JSON.stringify(this.template));
+      let temp = structuredClone(this.template);
       temp[fistKeyName] = id;
       this.collection.insertOne(temp);
       this.cache[id] = temp;
@@ -51,7 +51,8 @@ export default class GuildCache {
     fistKey[Object.keys(this.template)[0]] = id;
     let result = await this.collection.findOne(fistKey);
     if (!result) {
-      let temp = JSON.parse(JSON.stringify(this.template));
+      // let temp = JSON.parse(JSON.stringify(this.template));
+      let temp = structuredClone(this.template)
       temp[fistKeyName] = id;
       this.collection.insertOne(temp);
 
@@ -75,14 +76,14 @@ export default class GuildCache {
       this.cache[id] = {};
     }
     if (this.cache[id]["meta"] == undefined) {
-      this.cache[id]["meta"] = JSON.parse(JSON.stringify(this.meta));
+      this.cache[id]["meta"] = structuredClone(this.meta);
     }
     this.cache[id]["meta"][item] = value;
   }
 
   getmeta(item, id) {
     if (this.cache[id]["meta"] == undefined) {
-      this.cache[id]["meta"] = JSON.parse(JSON.stringify(this.meta));
+      this.cache[id]["meta"] = structuredClone(this.meta);
     }
     return this.cache[id]["meta"][item];
   }
