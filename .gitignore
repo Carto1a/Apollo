@@ -129,5 +129,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+dist/**/*
+
+/srcOld
+
 /lixo
 /teste
