@@ -7,9 +7,8 @@ import {
   MessageComponentTypes,
   ButtonStyleTypes,
 } from "discord-interactions";
-import WebSocket from "ws";
+import './websocket.js';
 import { VerifyDiscordRequest, getRandomEmoji } from "./helpers/discord.js";
-let ws = new WebSocket("wss://gateway.discord.gg/?v=10&encoding=json");
 
 const PORT = process.env.PORT || 3000;
 
@@ -44,64 +43,16 @@ app.listen(PORT, () => {
   console.log("Listening on port", PORT);
 });
 
-let payload = {
-  op: 2,
-  d: {
-    token: process.env.DISCORD_TOKEN,
-    intents: 512,
-    properties: {
-      os: "linux",
-      browser: "chrome",
-      device: "chrome",
-    },
-  },
-};
+// function exitHandler(options, exitCode) {
+//   console.log("exiting...");
+//   if (exitCode || exitCode === 0) console.log(exitCode);
+//   if (options.exit) process.exit();
+// }
 
-ws.addEventListener("open", function open(x) {
-  ws.send(JSON.stringify(payload));
-});
+// [`exit`, 'disconnect', `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`].forEach((eventType) => {
+//   process.on(eventType, exitHandler.bind(null, {exit:true}));
+// })
 
-ws.addEventListener("close", (event)=>{
-  console.log("WebSocket closing...");
-});
-
-ws.addEventListener("error", (event)=>{
-  console.log("WebSocket error...");
-});
-
-ws.addEventListener("message", function incoming(data) {
-  let x = data.data;
-  let payload = JSON.parse(x);
-  console.log(payload);
-
-  const { t, event, op, d } = payload;
-
-  console.log("Opcode: "+op);
-
-  switch (op) {
-    case 9:
-      console.log("Invalid Session");
-      break;
-    case 10:
-      const { heartbeat_interval } = d;
-      ws.send(JSON.stringify({ op: 1, d: null }));
-      setInterval(() => {
-        ws.send(JSON.stringify({ op: 1, d: null }));
-      }, heartbeat_interval);
-
-      break;
-      case 11:
-        console.log("Heartbeat ACK");
-        break;
-  }
-
-  console.log(t);
-
-  switch (t) {
-    // IF MESSAGE IS CREATED, IT WILL LOG IN THE CONSOLE
-    case "MESSAGE_CREATE":
-      console.log(d.author.username + ": " + d.content);
-  }
-});
+// process.on("SIGTERM")
 
 export default app;

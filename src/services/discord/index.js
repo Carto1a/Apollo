@@ -1,3 +1,4 @@
+import { AxiosError } from "axios";
 import { discord_api_v10 } from "../api.js";
 
 async function InstallGlobalCommands(appId, commands) {
@@ -36,4 +37,21 @@ async function getDiscordGateway(appId, commands) {
   }
 }
 
+async function sendMessage(channelId, data) {
+  try {
+    let res = await discord_api_v10.post(`/channels/${channelId}/messages`, data);
+    return res.data;
+  } catch (error) {
+    console.log(error.constructor.name);
+    if (error instanceof AxiosError) {
+      console.log(error.response.status);
+      console.log(error.response.data.message);
+    } else if (error instanceof ReferenceError) {
+      console.log(error.message);
+    }
+    throw error;
+  }
+}
+
 export {InstallGlobalCommands};
+export default {InstallGlobalCommands, sendMessage};
