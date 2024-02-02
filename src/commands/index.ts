@@ -8,14 +8,15 @@
 import discord from "../discord/index.js";
 import { MessageObject } from "../discord/types.js";
 import { ProcessedQuery } from "../types.js";
+import Logger from "../logger/index.js";
 
 function commandConfig(event_data: MessageObject, command_data: ProcessedQuery) {
-	console.log("config");
+	Logger.debug("config");
 	discord.sendMessage(event_data.channel_id, <string>command_data.command);
 }
 
 function commandJoin(event_data: MessageObject, command_data: ProcessedQuery) {
-	console.log("join");
+	Logger.debug("join");
 	discord.sendMessage(event_data.channel_id, <string>command_data.command);
 }
 
@@ -84,20 +85,21 @@ function commandJoin(event_data: MessageObject, command_data: ProcessedQuery) {
 // }
 
 function commandDefault(event_data: MessageObject, command: string | undefined) {
-	console.log("comando não existe");
+	Logger.debug("comando não existe");
 	discord.sendMessage(event_data.channel_id, `Not a valid command ${command}`);
 }
 
-let commands: Map<string, (x: MessageObject, y: ProcessedQuery) => void> = new Map();
-commands.set("config", commandConfig);
-commands.set("join", commandJoin);
+let commands: Record<string, (x: MessageObject, y: ProcessedQuery) => void> = {
+	"config": commandConfig,
+	"join": commandJoin
+}
 
 async function messageEvent(event_data: MessageObject, query: ProcessedQuery) {
 	let player;
 	let queue;
 	let current;
 
-	let func = commands.get(<string>query.command);
+	let func = commands[<string>query.command];
 	if (func != undefined) {
 		func(event_data, query);
 	} else {
@@ -143,7 +145,7 @@ async function messageEvent(event_data: MessageObject, query: ProcessedQuery) {
 	//     player.unpause();
 	//     break;
 	//   case "stop":
-	//     console.log("stop");
+	//     Logger.debug("stop");
 	//     break;
 	//   case "queue":
 	//     message.guildName = message.guild.name;
@@ -165,7 +167,7 @@ async function messageEvent(event_data: MessageObject, query: ProcessedQuery) {
 	//     connection.destroy();
 	//     break;
 	//   case "loop":
-	//     console.log("nao feito");
+	//     Logger.debug("nao feito");
 	//     break;
 	//   case "playing":
 	//     queue = global.guildcache.getmeta("queue", message.guildId);
@@ -181,17 +183,17 @@ async function messageEvent(event_data: MessageObject, query: ProcessedQuery) {
 	//     helpers.playQueue(message);
 	//     break;
 	//   case "remove":
-	//     console.log("nao feito");
+	//     Logger.debug("nao feito");
 	//     break;
 	//   case "kill":
 	//     message.reply("tchau");
 	//     process.exit();
 	//     break;
 	//   case "ping":
-	//     console.log("nao feito");
+	//     Logger.debug("nao feito");
 	//     break;
 	//   case "emoji":
-	//     console.log("nao feito");
+	//     Logger.debug("nao feito");
 	//     break;
 	//   case "dump":
 	//     global.guildcache.dump();

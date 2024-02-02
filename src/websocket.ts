@@ -3,6 +3,7 @@ import helpers from "./helpers/helpers.js";
 import commands from "./commands/index.js";
 import { WebsocketStateEvent, WebsocketPaylod, MessageObject } from "./discord/types.js";
 import { ProcessedQuery } from "./types.js";
+import Logger from "./logger/index.js";
 
 let ws: WebSocket;
 
@@ -34,8 +35,8 @@ function message_create(event_data: MessageObject) {
 	if (event_data.content.slice(0, prefix.length) != prefix) return;
 
 	const { command, query, args }: ProcessedQuery = helpers.processQuery(event_data.content, prefix);
-	console.log(`Message from ${event_data.author.username}: ${event_data.content}`);
-	console.log(`args: ${args} | command: ${command} | query: ${query}`);
+	Logger.debug(`Message from ${event_data.author.username}: ${event_data.content}`);
+	Logger.debug(`args: ${args} | command: ${command} | query: ${query}`);
 
 	commands.messageEvent(event_data, {command, query, args});
 }
@@ -43,24 +44,25 @@ function message_create(event_data: MessageObject) {
 function ready(event_data: any) {
 	socket_state.session_id = event_data.session_id;
 	socket_state.resume_gateway_url = event_data.resume_gateway_url;
-	console.log(`Logged in as ${event_data.user.username}!`);
+	Logger.info(`Logged in as ${event_data.user.username}!`);
 }
 
 function guild_create(event_data: any) {
-	// console.log(event_data);
+	// Logger.debug(event_data);
 	let id = event_data.id;
 	let name = event_data.name;
-	console.log(`id: ${id} name: ${name}`);
+	Logger.info(`id: ${id} name: ${name}`);
 }
 
 function defaultEvent() {
-	console.log("não implementado");
+	Logger.debug("não implementado");
 }
 
-let events: Map<string, (x: any) => void> = new Map();
-events.set("MESSAGE_CREATE", message_create);
-events.set("READY", ready);
-events.set("GUILD_CREATE", guild_create);
+const events: Record<string, (x: any) => void> = {
+	"MESSAGE_CREATE": message_create,
+	"READY": ready,
+	"GUILD_CREATE": guild_create
+}
 
 function handlerEvent(payload: WebsocketPaylod): void {
 	const { t, d, s }: WebsocketPaylod = payload;
@@ -69,8 +71,8 @@ function handlerEvent(payload: WebsocketPaylod): void {
 	let event_data = d;
 	socket_state.last_event = s;
 
-	console.log(event_name);
-	let func = events.get(<string>event_name);
+	Logger.debug(event_name);
+	let func = events[<string>event_name];
 	if (func != undefined) {
 		func(event_data)
 	} else {
@@ -101,28 +103,28 @@ function connect() {
 	}
 
 	ws.addEventListener("close", (event: CloseEvent) => {
-		console.log(`WebSocket closed with code ${event.code}, reason: ${event.reason}`);
-		console.log(event);
+		Logger.debug(`WebSocket closed with code ${event.code}, reason: ${event.reason}`);
+		Logger.debug(event);
 		// tentar reconectar
 		socket_state.reconnect = true;
 		connect();
 	});
 
 	ws.addEventListener("error", (event: ErrorEvent) => {
-		console.log("WebSocket error...");
-		console.log(event.type);
-		console.log(event.error);
-		console.log(event.message + '\n');
+		Logger.debug("WebSocket error...");
+		Logger.debug(event.type);
+		Logger.debug(event.error);
+		Logger.debug(event.message + '\n');
 	});
 
 	ws.addEventListener("message", function incoming(data: any) {
 		let x: string = data.data;
 		let payload: any = JSON.parse(x);
-		// console.log(payload);
+		// Logger.debug(payload);
 
 		const { t, op, d, s }: WebsocketPaylod = payload;
 
-		// console.log("Opcode: " + op);
+		// Logger.debug("Opcode: " + op);
 
 		switch (op) {
 			case 0:
@@ -130,14 +132,14 @@ function connect() {
 				break;
 
 			case 7:
-				console.log("Reconnect");
+				Logger.debug("Reconnect");
 				// tentar reconectar
 				socket_state.reconnect = true;
 				connect();
 				break;
 
 			case 9:
-				console.log("Invalid Session");
+				Logger.debug("Invalid Session");
 				if (d) {
 					// tentar reconectar
 					socket_state.reconnect = true;
@@ -159,7 +161,7 @@ function connect() {
 				break;
 
 			case 11:
-				// console.log("Heartbeat ACK");
+				// Logger.debug("Heartbeat ACK");
 				break;
 		}
 	});

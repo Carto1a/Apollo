@@ -8,6 +8,7 @@ import {
 	ButtonStyleTypes,
 } from "discord-interactions";
 import "./websocket.js";
+import Logger from "./logger/index.js";
 import { VerifyDiscordRequest } from "./helpers/discord.js";
 
 const PORT: number = Number(process.env.PORT) || 3000;
@@ -17,7 +18,7 @@ app.use(express.json({ verify: VerifyDiscordRequest }));
 
 app.post("/interactions", async (req: Request, res: Response) => {
 	const { type, id, data } = req.body;
-	console.log(req.body);
+	Logger.debug(req.body);
 
 	if (type === InteractionType.PING)
 		return res.send({ type: InteractionResponseType.PONG });
@@ -36,7 +37,7 @@ app.post("/interactions", async (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-	console.log("Listening on port", PORT);
+	Logger.info(`Listening on port ${PORT}`);
 });
 
 export default app;
