@@ -7,10 +7,8 @@ import Logger from "./logger/index.js";
 
 let ws: WebSocket;
 
-let payload: WebsocketPaylod = {
+let init_payload: WebsocketPaylod = {
 	op: 2,
-	s: undefined,
-	t: undefined,
 	d: {
 		token: process.env.DISCORD_TOKEN,
 		intents: 34433,
@@ -26,9 +24,9 @@ let socket_state: WebsocketStateEvent = {
 	reconnect: false,
 	session_id: "",
 	resume_gateway_url: "",
-	last_event: undefined,
 };
 
+// Websocket receiver events
 function message_create(event_data: MessageObject) {
 	let prefix: string = "!";
 	if (event_data.author.bot) return;
@@ -38,7 +36,7 @@ function message_create(event_data: MessageObject) {
 	Logger.debug(`Message from ${event_data.author.username}: ${event_data.content}`);
 	Logger.debug(`args: ${args} | command: ${command} | query: ${query}`);
 
-	commands.messageEvent(event_data, {command, query, args});
+	commands.messageEvent(event_data, { command, query, args });
 }
 
 function ready(event_data: any) {
@@ -62,10 +60,12 @@ const events: Record<string, (x: any) => void> = {
 	"MESSAGE_CREATE": message_create,
 	"READY": ready,
 	"GUILD_CREATE": guild_create
+	// "VOICE_SERVER_UPDATE"
 }
 
-function handlerEvent(payload: WebsocketPaylod): void {
-	const { t, d, s }: WebsocketPaylod = payload;
+function handlerEvent(payload_event: WebsocketPaylod): void {
+	const { t, d, s }: WebsocketPaylod = payload_event;
+	Logger.debug(JSON.stringify(payload_event));
 
 	let event_name = t;
 	let event_data = d;
@@ -79,12 +79,73 @@ function handlerEvent(payload: WebsocketPaylod): void {
 		defaultEvent();
 	}
 }
+// Websocket receiver events
+
+// Websocket transmitter events
+function requestVoiceChannel(guild_id: string, channel_id: string) {
+	let payload: WebsocketPaylod = {
+		op: 4,
+		d: {
+			guild_id,
+			channel_id,
+			self_mute: false,
+			self_deaf: false
+		}
+	};
+	ws.send(JSON.stringify(payload));
+}
+
+// Websocket transmitter events
+// TODO: resolver caso a conecção so zombized
+function handlerMessage({ t, op, d, s }: WebsocketPaylod): void {
+	Logger.debug("Opcode: " + op);
+	switch (op) {
+		case 0:
+			handlerEvent({ t, op, d, s});
+			break;
+		case 1:
+			// TODO: colocar alguma coisa no d
+			ws.send(JSON.stringify({ op: 1, d: null }));
+			break;
+		case 7:
+			Logger.debug("Reconnect");
+			// tentar reconectar
+			socket_state.reconnect = true;
+			connect();
+			break;
+		case 9:
+			Logger.debug("Invalid Session");
+			if (d) {
+				// tentar reconectar
+				socket_state.reconnect = true;
+				connect();
+			} else {
+				// tentar conectar
+				socket_state.reconnect = false;
+				connect();
+			}
+			break;
+
+		case 10:
+			const { heartbeat_interval } = d;
+			setInterval(() => {
+				// TODO: colocar alguma coisa no d
+				ws.send(JSON.stringify({ op: 1, d: null }));
+			}, heartbeat_interval);
+
+			break;
+
+		case 11:
+			Logger.trace("Heartbeat ACK");
+			break;
+	}
+}
 
 function connect() {
 	if (socket_state.reconnect) {
 		ws = new WebSocket(socket_state.resume_gateway_url + "/?v=10&encoding=json");
 		ws.addEventListener("open", () => {
-			let resume_payload = {
+			let resume_payload: WebsocketPaylod = {
 				op: 6,
 				d: {
 					token: process.env.DISCORD_TOKEN,
@@ -98,7 +159,8 @@ function connect() {
 	} else {
 		ws = new WebSocket("wss://gateway.discord.gg/?v=10&encoding=json");
 		ws.addEventListener("open", () => {
-			ws.send(JSON.stringify(payload));
+			Logger.info("WebSocket open");
+			ws.send(JSON.stringify(init_payload));
 		});
 	}
 
@@ -119,54 +181,13 @@ function connect() {
 
 	ws.addEventListener("message", function incoming(data: any) {
 		let x: string = data.data;
-		let payload: any = JSON.parse(x);
-		// Logger.debug(payload);
-
-		const { t, op, d, s }: WebsocketPaylod = payload;
-
-		// Logger.debug("Opcode: " + op);
-
-		switch (op) {
-			case 0:
-				handlerEvent(payload);
-				break;
-
-			case 7:
-				Logger.debug("Reconnect");
-				// tentar reconectar
-				socket_state.reconnect = true;
-				connect();
-				break;
-
-			case 9:
-				Logger.debug("Invalid Session");
-				if (d) {
-					// tentar reconectar
-					socket_state.reconnect = true;
-					connect();
-				} else {
-					// tentar conectar
-					socket_state.reconnect = false;
-					connect();
-				}
-				break;
-
-			case 10:
-				const { heartbeat_interval } = d;
-				ws.send(JSON.stringify({ op: 1, d: null }));
-				setInterval(() => {
-					ws.send(JSON.stringify({ op: 1, d: null }));
-				}, heartbeat_interval);
-
-				break;
-
-			case 11:
-				// Logger.debug("Heartbeat ACK");
-				break;
-		}
+		let payload: WebsocketPaylod = JSON.parse(x);
+		handlerMessage(payload);
 	});
 }
 
 connect();
-
+export {
+	requestVoiceChannel,
+};
 //export default ws;

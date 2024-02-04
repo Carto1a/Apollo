@@ -1,7 +1,7 @@
 export interface ProcessedQuery {
-	command: string | undefined,
-	query: string | undefined,
-	args: Array<string> 
+	command?: string,
+	query?: string,
+	args?: Array<string>
 };
 
 

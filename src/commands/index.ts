@@ -9,15 +9,17 @@ import discord from "../discord/index.js";
 import { MessageObject } from "../discord/types.js";
 import { ProcessedQuery } from "../types.js";
 import Logger from "../logger/index.js";
+import { requestVoiceChannel } from "../websocket.js"; 
 
 function commandConfig(event_data: MessageObject, command_data: ProcessedQuery) {
 	Logger.debug("config");
 	discord.sendMessage(event_data.channel_id, <string>command_data.command);
 }
 
-function commandJoin(event_data: MessageObject, command_data: ProcessedQuery) {
+function commandJoin(message: MessageObject, command_data: ProcessedQuery) {
 	Logger.debug("join");
-	discord.sendMessage(event_data.channel_id, <string>command_data.command);
+	discord.sendMessage(message.channel_id, "tentando se conectar");
+	// requestVoiceChannel();
 }
 
 // function commandPlay(event_data, command_data) {
