@@ -7,10 +7,10 @@ import {
 	MessageComponentTypes,
 	ButtonStyleTypes,
 } from "discord-interactions";
-import "./websocket.js";
 import Logger from "./logger/index.js";
 import { VerifyDiscordRequest } from "./helpers/discord.js";
-
+// import "./websocket.js";
+import "./events.js";
 const PORT: number = Number(process.env.PORT) || 3000;
 const app: Express = express();
 

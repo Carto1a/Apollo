@@ -1,3 +1,6 @@
+// TODO: melhorar os nomes das coisas
+// e melhorar o nome dos tipos
+
 export interface WebsocketStateEvent {
 	reconnect: boolean,
 	session_id: string,
@@ -329,3 +332,58 @@ export interface MessageObject {
 	// role_subscription_date?:
 	// resolved?:
 };
+
+export interface GuildMemberObject {
+	user?: UserObject,
+	nick?: string,
+	avatar?: string,
+	roles: Array<String>,
+	joined_at: string,
+	premium_since?: string,
+	deaf: boolean,
+	mute: boolean,
+	flags: number,
+	pending?: boolean,
+	permissions?: string,
+	communication_disabled_until?: string
+}
+
+export interface MentionsUsers extends Partial<GuildMemberObject>, UserObject {
+
+}
+
+export interface VoiceStateObject {
+	guild_id?: string;
+	channel_id?: string;
+	user_id: string;
+	member?: GuildMemberObject;
+	session_id: string;
+	deaf: boolean;
+	mute: boolean;
+	self_deaf: boolean;
+	self_mute: boolean;
+	self_stream?: boolean;
+	self_video: boolean;
+	suppress: boolean;
+	request_to_speak_timestamp?: string;
+}
+
+export interface WSGuildObject extends GuildObject {
+	joined_at: string,
+	large: boolean,
+	unavailable?: boolean,
+	member_count: number,
+	voice_states: Array<Partial<VoiceStateObject>>,
+	members: Array<GuildMemberObject>,
+	channels: Array<ChannelObject>,
+	threads: Array<ChannelObject>,
+	// presences: Array<Partial<>>,
+	// stage_instances: Array<>,
+	// guid_scheduled_events: Array<>
+}
+
+export interface WSMessageObject extends MessageObject {
+	guild_id: string,
+	member?: Partial<GuildMemberObject>,
+	mentions: Array<MentionsUsers>
+}

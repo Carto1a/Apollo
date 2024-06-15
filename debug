@@ -1,0 +1,21 @@
+[DEBUG 04/02/2024, 19:48:07] Opcode: 7
+[DEBUG 04/02/2024, 19:48:07] Reconnect
+/home/cartola/Soul/Discord/Orpheus-Chad-ts/node_modules/ws/lib/websocket.js:692
+      throw new SyntaxError(`Invalid URL: ${address}`);
+            ^
+
+SyntaxError: Invalid URL: /?v=10&encoding=json
+    at initAsClient (/home/cartola/Soul/Discord/Orpheus-Chad-ts/node_modules/ws/lib/websocket.js:692:13)
+    at new WebSocket (/home/cartola/Soul/Discord/Orpheus-Chad-ts/node_modules/ws/lib/websocket.js:85:7)
+    at DiscordWebsocket.connect (file:///home/cartola/Soul/Discord/Orpheus-Chad-ts/dist/websocket.js:42:23)
+    at DiscordWebsocket.handlerMessage (file:///home/cartola/Soul/Discord/Orpheus-Chad-ts/dist/websocket.js:95:22)
+    at WebSocket.<anonymous> (file:///home/cartola/Soul/Discord/Orpheus-Chad-ts/dist/websocket.js:78:18)
+    at callListener (/home/cartola/Soul/Discord/Orpheus-Chad-ts/node_modules/ws/lib/event-target.js:290:14)
+    at WebSocket.onMessage (/home/cartola/Soul/Discord/Orpheus-Chad-ts/node_modules/ws/lib/event-target.js:209:9)
+    at WebSocket.emit (node:events:519:28)
+    at Receiver.receiverOnMessage (/home/cartola/Soul/Discord/Orpheus-Chad-ts/node_modules/ws/lib/websocket.js:1209:20)
+    at Receiver.emit (node:events:519:28)
+
+Node.js v21.6.1
+❯ tsc
+

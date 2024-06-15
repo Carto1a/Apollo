@@ -9,4 +9,9 @@ function sendMessage(channelId: string, content: string): void {
 	discord.sendMessage(channelId, data);
 }
 
-export default { sendMessage };
+export { sendMessage };
+//
+//
+import Client from "./Client.js";
+export default Client;
+

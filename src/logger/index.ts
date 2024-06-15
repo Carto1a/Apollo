@@ -5,7 +5,7 @@
 // INFO  4
 // [FATAL 10/10/2003 10:10:10] Aconteceu alguma coisa
 
-class Logger {
+class LoggerClass {
 	LOG_LEVEL: number = Number(process.env.LOG_LEVEL);
 
 	constructor() {
@@ -48,4 +48,6 @@ class Logger {
 	}
 }
 
-export default new Logger();
+let Logger = new LoggerClass();
+
+export default Logger;

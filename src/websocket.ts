@@ -1,11 +1,19 @@
 import WebSocket, { CloseEvent, ErrorEvent, MessageEvent } from "ws";
 import helpers from "./helpers/helpers.js";
 import commands from "./commands/index.js";
-import { WebsocketStateEvent, WebsocketPaylod, MessageObject } from "./discord/types.js";
+import {
+	WebsocketStateEvent,
+	WebsocketPaylod,
+	MessageObject,
+	WSMessageObject,
+	WSGuildObject,
+	VoiceStateObject
+} from "./discord/types.js";
 import { ProcessedQuery } from "./types.js";
 import Logger from "./logger/index.js";
-
-let ws: WebSocket;
+import VoiceStateManager from "./discord/voiceStateManager.js";
+import VoiceConnectionManager from "./voice/VoiceConnectionManager.js";
+import EventEmitter from "node:events";
 
 let init_payload: WebsocketPaylod = {
 	op: 2,
@@ -20,174 +28,219 @@ let init_payload: WebsocketPaylod = {
 	},
 };
 
-let socket_state: WebsocketStateEvent = {
-	reconnect: false,
-	session_id: "",
-	resume_gateway_url: "",
-};
-
-// Websocket receiver events
-function message_create(event_data: MessageObject) {
-	let prefix: string = "!";
-	if (event_data.author.bot) return;
-	if (event_data.content.slice(0, prefix.length) != prefix) return;
-
-	const { command, query, args }: ProcessedQuery = helpers.processQuery(event_data.content, prefix);
-	Logger.debug(`Message from ${event_data.author.username}: ${event_data.content}`);
-	Logger.debug(`args: ${args} | command: ${command} | query: ${query}`);
-
-	commands.messageEvent(event_data, { command, query, args });
-}
-
-function ready(event_data: any) {
-	socket_state.session_id = event_data.session_id;
-	socket_state.resume_gateway_url = event_data.resume_gateway_url;
-	Logger.info(`Logged in as ${event_data.user.username}!`);
-}
-
-function guild_create(event_data: any) {
-	// Logger.debug(event_data);
-	let id = event_data.id;
-	let name = event_data.name;
-	Logger.info(`id: ${id} name: ${name}`);
-}
-
-function defaultEvent() {
-	Logger.debug("não implementado");
-}
-
-const events: Record<string, (x: any) => void> = {
-	"MESSAGE_CREATE": message_create,
-	"READY": ready,
-	"GUILD_CREATE": guild_create
-	// "VOICE_SERVER_UPDATE"
-}
-
-function handlerEvent(payload_event: WebsocketPaylod): void {
-	const { t, d, s }: WebsocketPaylod = payload_event;
-	Logger.debug(JSON.stringify(payload_event));
-
-	let event_name = t;
-	let event_data = d;
-	socket_state.last_event = s;
-
-	Logger.debug(event_name);
-	let func = events[<string>event_name];
-	if (func != undefined) {
-		func(event_data)
-	} else {
-		defaultEvent();
-	}
-}
-// Websocket receiver events
-
-// Websocket transmitter events
-function requestVoiceChannel(guild_id: string, channel_id: string) {
-	let payload: WebsocketPaylod = {
-		op: 4,
-		d: {
-			guild_id,
-			channel_id,
-			self_mute: false,
-			self_deaf: false
-		}
+class DiscordWebsocket extends EventEmitter {
+	socket_state: WebsocketStateEvent = {
+		reconnect: false,
+		session_id: "",
+		resume_gateway_url: "",
 	};
-	ws.send(JSON.stringify(payload));
-}
 
-// Websocket transmitter events
-// TODO: resolver caso a conecção so zombized
-function handlerMessage({ t, op, d, s }: WebsocketPaylod): void {
-	Logger.debug("Opcode: " + op);
-	switch (op) {
-		case 0:
-			handlerEvent({ t, op, d, s});
-			break;
-		case 1:
-			// TODO: colocar alguma coisa no d
-			ws.send(JSON.stringify({ op: 1, d: null }));
-			break;
-		case 7:
-			Logger.debug("Reconnect");
+	ws: WebSocket;
+	voiceConnectionManager: VoiceConnectionManager;
+
+	events: Record<string, (x: any) => void> = {
+		"MESSAGE_CREATE": this.message_create,
+		"READY": this.ready,
+		"GUILD_CREATE": this.guild_create,
+		"VOICE_STATE_UPDATE": this.voice_state_update,
+		"VOICE_SERVER_UPDATE": this.voice_server_update,
+	}
+
+	voiceStates: VoiceStateManager;
+	guildList: Map<string, Partial<WSGuildObject>>;
+
+	constructor() {
+		super();
+		this.ws = new WebSocket("wss://gateway.discord.gg/?v=10&encoding=json");
+		this.guildList = new Map();
+		this.voiceStates = new VoiceStateManager();
+		this.voiceConnectionManager = new VoiceConnectionManager();
+		this.connect();
+	}
+
+	connect() {
+		if (this.socket_state.reconnect) {
+			Logger.debug(`Try reconnect with ${this.socket_state.resume_gateway_url}`);
+			this.ws = new WebSocket(this.socket_state.resume_gateway_url + "/?v=10&encoding=json");
+			this.ws.addEventListener("open", () => {
+				let resume_payload: WebsocketPaylod = {
+					op: 6,
+					d: {
+						token: process.env.DISCORD_TOKEN,
+						session_id: this.socket_state.session_id,
+						seq: this.socket_state.last_event,
+					},
+				};
+				this.ws.send(JSON.stringify(resume_payload));
+				this.socket_state.reconnect = false;
+			});
+		} else {
+			this.ws.addEventListener("open", () => {
+				Logger.info("WebSocket open");
+				this.ws.send(JSON.stringify(init_payload));
+			});
+		}
+		this.ws.addEventListener("close", (event: CloseEvent) => {
+			Logger.debug(`WebSocket closed with code ${event.code}, reason: ${event.reason}`);
+			Logger.debug(event);
 			// tentar reconectar
-			socket_state.reconnect = true;
-			connect();
-			break;
-		case 9:
-			Logger.debug("Invalid Session");
-			if (d) {
-				// tentar reconectar
-				socket_state.reconnect = true;
-				connect();
-			} else {
-				// tentar conectar
-				socket_state.reconnect = false;
-				connect();
-			}
-			break;
+			this.socket_state.reconnect = true;
+			this.connect();
+		});
 
-		case 10:
-			const { heartbeat_interval } = d;
-			setInterval(() => {
+		this.ws.addEventListener("error", (event: ErrorEvent) => {
+			Logger.debug("WebSocket error...");
+			Logger.debug(event.type);
+			Logger.debug(event.error);
+			Logger.debug(event.message + '\n');
+		});
+
+		this.ws.addEventListener("message", (data: any) => {
+			let x: string = data.data;
+			let payload: WebsocketPaylod = JSON.parse(x);
+			this.handlerMessage(payload);
+		});
+	}
+
+	handlerMessage({ t, op, d, s }: WebsocketPaylod): void {
+		Logger.debug("Opcode: " + op);
+		switch (op) {
+			case 0:
+				this.handlerEvent({ t, op, d, s });
+				break;
+			case 1:
 				// TODO: colocar alguma coisa no d
-				ws.send(JSON.stringify({ op: 1, d: null }));
-			}, heartbeat_interval);
+				this.ws.send(JSON.stringify({ op: 1, d: null }));
+				break;
+			case 7:
+				Logger.debug("Reconnect");
+				// tentar reconectar
+				this.socket_state.reconnect = true;
+				this.connect();
+				break;
+			case 9:
+				Logger.debug("Invalid Session");
+				if (d) {
+					// tentar reconectar
+					this.socket_state.reconnect = true;
+					this.connect();
+				} else {
+					// tentar conectar
+					this.socket_state.reconnect = false;
+					this.connect();
+				}
+				break;
 
-			break;
+			case 10:
+				const { heartbeat_interval } = d;
+				setInterval(() => {
+					// TODO: colocar alguma coisa no d
+					this.ws.send(JSON.stringify({ op: 1, d: null }));
+				}, heartbeat_interval);
 
-		case 11:
-			Logger.trace("Heartbeat ACK");
-			break;
+				break;
+
+			case 11:
+				Logger.trace("Heartbeat ACK");
+				break;
+		}
 	}
-}
 
-function connect() {
-	if (socket_state.reconnect) {
-		ws = new WebSocket(socket_state.resume_gateway_url + "/?v=10&encoding=json");
-		ws.addEventListener("open", () => {
-			let resume_payload: WebsocketPaylod = {
-				op: 6,
+	handlerEvent(payload_event: WebsocketPaylod): void {
+		const { t, d, s }: WebsocketPaylod = payload_event;
+		Logger.debug(JSON.stringify(payload_event));
+
+		let event_name = t;
+		let event_data = d;
+		this.socket_state.last_event = s;
+
+		Logger.debug(event_name);
+		let func = this.events[<string>event_name]?.bind(this);
+		if (func != undefined) {
+			func(event_data)
+		} else {
+			this.defaultEvent();
+		}
+	}
+
+	// Websocket receiver events
+	message_create(event_data: WSMessageObject) {
+		let prefix: string = "!";
+		if (event_data.author.bot) return;
+		if (event_data.content.slice(0, prefix.length) != prefix) return;
+
+		const { command, query, args }: ProcessedQuery = helpers.processQuery(event_data.content, prefix);
+		Logger.debug(`Message from ${event_data.author.username}: ${event_data.content}`);
+		Logger.debug(`args: ${args} | command: ${command} | query: ${query}`);
+
+		commands.messageEvent(event_data, { command, query, args });
+	}
+
+	ready(event_data: any) {
+		Logger.trace(JSON.stringify(event_data));
+		this.socket_state.session_id = event_data.session_id;
+		this.socket_state.resume_gateway_url = event_data.resume_gateway_url;
+		Logger.trace("socket_state");
+		Logger.trace(JSON.stringify(this.socket_state));
+		Logger.info(`Logged in as ${event_data.user.username}!`);
+	}
+
+	guild_create(event_data: WSGuildObject) {
+		let id = event_data.id;
+		let name = event_data.name;
+		Logger.info(`id: ${id} name: ${name}`);
+
+		if (event_data.voice_states.length != 0)
+			this.voiceStates.init(event_data.voice_states);
+	}
+
+	voice_state_update(event_data: VoiceStateObject) {
+		Logger.debug(JSON.stringify(event_data));
+		if (event_data.channel_id != null) {
+			this.voiceStates.add(event_data);
+		} else {
+			this.voiceStates.delete(event_data.user_id);
+		}
+	}
+
+	voice_server_update(event_data: VoiceStateObject) {
+
+	}
+
+	defaultEvent() {
+		Logger.debug("não implementado");
+	}
+
+	requestGuildMember(guild_id: string, user_id: string) {
+		let payload = {
+			op: 8,
+			d: {
+				guild_id,
+				user_ids: user_id
+			}
+		};
+		this.ws.send(JSON.stringify(payload));
+	}
+
+	requestVoiceChannel(message: WSMessageObject) {
+		// this.requestGuildMember(message.guild_id, message.author.id);
+		let channel_id: string | undefined = this.voiceStates.channelId(message.author.id);
+		if (channel_id == undefined) {
+			Logger.trace("usuario não esta em um canal de voz");
+		} else {
+			let payload: WebsocketPaylod = {
+				op: 4,
 				d: {
-					token: process.env.DISCORD_TOKEN,
-					session_id: socket_state.session_id,
-					seq: socket_state.last_event,
-				},
+					guild_id: message.guild_id,
+					channel_id,
+					self_mute: false,
+					self_deaf: false
+				}
 			};
-			ws.send(JSON.stringify(resume_payload));
-			socket_state.reconnect = false;
-		});
-	} else {
-		ws = new WebSocket("wss://gateway.discord.gg/?v=10&encoding=json");
-		ws.addEventListener("open", () => {
-			Logger.info("WebSocket open");
-			ws.send(JSON.stringify(init_payload));
-		});
+			this.ws.send(JSON.stringify(payload));
+		}
 	}
-
-	ws.addEventListener("close", (event: CloseEvent) => {
-		Logger.debug(`WebSocket closed with code ${event.code}, reason: ${event.reason}`);
-		Logger.debug(event);
-		// tentar reconectar
-		socket_state.reconnect = true;
-		connect();
-	});
-
-	ws.addEventListener("error", (event: ErrorEvent) => {
-		Logger.debug("WebSocket error...");
-		Logger.debug(event.type);
-		Logger.debug(event.error);
-		Logger.debug(event.message + '\n');
-	});
-
-	ws.addEventListener("message", function incoming(data: any) {
-		let x: string = data.data;
-		let payload: WebsocketPaylod = JSON.parse(x);
-		handlerMessage(payload);
-	});
 }
 
-connect();
-export {
-	requestVoiceChannel,
-};
-//export default ws;
+const discord_websocket: DiscordWebsocket = new DiscordWebsocket();
+export default discord_websocket;
