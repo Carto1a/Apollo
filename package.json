@@ -1,7 +1,7 @@
 {
-  "name": "songs",
-  "version": "1.0.0",
-  "description": "",
+  "name": "Orpheus",
+  "version": "0.1.0",
+  "description": "A Discord Library",
   "main": "app.js",
   "type": "module",
   "scripts": {
